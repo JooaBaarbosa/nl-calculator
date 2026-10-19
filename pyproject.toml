@@ -1,0 +1,42 @@
+[project]
+name = "nl-calculator"
+version = "0.1.0"
+description = "Calculadora em linguagem natural: o Claude interpreta, código determinístico calcula."
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "JoaoBarbosa", email = "joao.paula2010@hotmail.com" }]
+requires-python = ">=3.14,<3.15"
+dependencies = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/nl_calculator"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+extend-exclude = ["docs"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+strict = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=nl_calculator --cov-report=term-missing"
+
+[tool.coverage.report]
+fail_under = 90
+
+[dependency-groups]
+dev = [
+    "mypy>=2.4.0",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.17.1",
+]
