@@ -7,6 +7,7 @@ license = "MIT"
 authors = [{ name = "JoaoBarbosa", email = "joao.paula2010@hotmail.com" }]
 requires-python = ">=3.14,<3.15"
 dependencies = [
+    "anthropic>=1.15.0",
     "pydantic-settings>=2.16.0",
 ]
 
