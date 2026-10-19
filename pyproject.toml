@@ -6,7 +6,9 @@ readme = "README.md"
 license = "MIT"
 authors = [{ name = "JoaoBarbosa", email = "joao.paula2010@hotmail.com" }]
 requires-python = ">=3.14,<3.15"
-dependencies = []
+dependencies = [
+    "pydantic-settings>=2.16.0",
+]
 
 [build-system]
 requires = ["hatchling"]
@@ -25,6 +27,7 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 
 [tool.mypy]
 strict = true
+plugins = ["pydantic.mypy"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
