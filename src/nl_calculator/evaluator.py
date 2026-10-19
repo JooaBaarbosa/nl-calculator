@@ -6,7 +6,6 @@ Nunca usa eval/exec: percorre a árvore AST aceitando apenas uma lista fechada d
 
 import ast
 import decimal
-import math
 from dataclasses import dataclass
 from decimal import Decimal
 
@@ -55,7 +54,7 @@ def evaluate(expression: str, limits: Limits = DEFAULT_LIMITS) -> Decimal:
         raise CalculationError("too_complex", "A expressão tem elementos demais.")
     with decimal.localcontext(_CONTEXT):
         try:
-            return _eval(tree.body, limits)
+            return _eval(tree.body, limits, source)
         except decimal.Overflow as exc:
             raise CalculationError("too_large", "O resultado é grande demais.") from exc
         except decimal.InvalidOperation as exc:
@@ -72,23 +71,23 @@ def format_decimal(value: Decimal) -> str:
     return str(normalized)
 
 
-def _eval(node: ast.expr, limits: Limits) -> Decimal:
+def _eval(node: ast.expr, limits: Limits, source: str) -> Decimal:
     match node:
         case ast.Constant(value=bool()):
             raise CalculationError("forbidden_element", "Valores booleanos não são suportados.")
-        case ast.Constant(value=int() | float() as value):
-            return _to_decimal(value)
+        case ast.Constant(value=int() | float()):
+            return _literal(node, source)
         case ast.Constant():
             raise CalculationError("forbidden_element", "Apenas números são suportados.")
         case ast.UnaryOp(op=ast.UAdd(), operand=operand):
-            return +_eval(operand, limits)
+            return +_eval(operand, limits, source)
         case ast.UnaryOp(op=ast.USub(), operand=operand):
-            return -_eval(operand, limits)
+            return -_eval(operand, limits, source)
         case ast.BinOp(left=left, op=op, right=right):
             _check_operator(op)
-            return _binop(op, _eval(left, limits), _eval(right, limits), limits)
+            return _binop(op, _eval(left, limits, source), _eval(right, limits, source), limits)
         case ast.Call(func=ast.Name(id="sqrt"), args=[arg], keywords=[]):
-            return _sqrt(_eval(arg, limits))
+            return _sqrt(_eval(arg, limits, source))
         case ast.Call():
             raise CalculationError(
                 "forbidden_element", "Só a função sqrt(x), com um argumento, é suportada."
@@ -107,12 +106,12 @@ def _eval(node: ast.expr, limits: Limits) -> Decimal:
             )
 
 
-def _to_decimal(value: int | float) -> Decimal:
-    if isinstance(value, float):
-        if not math.isfinite(value):
-            raise CalculationError("too_large", "Número grande demais.")
-        return Decimal(repr(value))
-    return Decimal(value)
+def _literal(node: ast.Constant, source: str) -> Decimal:
+    """Converte o literal a partir do texto da expressão, sem passar por float."""
+    text = ast.get_source_segment(source, node)
+    assert text is not None  # ast.parse sempre preenche a posição dos nós
+    # O + unário aplica o contexto: arredonda a 28 dígitos e dispara Overflow se preciso.
+    return +Decimal(text.replace("_", ""))
 
 
 def _check_operator(op: ast.operator) -> None:

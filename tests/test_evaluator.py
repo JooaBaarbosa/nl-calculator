@@ -31,6 +31,21 @@ def test_evaluates_supported_expressions(expression: str, expected: str) -> None
     assert format_decimal(evaluate(expression)) == expected
 
 
+@pytest.mark.parametrize(
+    ("expression", "expected"),
+    [
+        ("0.3333333333333333333333333333 * 3", "0.9999999999999999999999999999"),
+        ("1.0000000000000000000001 - 1", "1E-22"),
+        ("0.12345678901234567890123 * 1", "0.12345678901234567890123"),
+        ("1e309 / 1e308", "10"),
+        ("1_000.5 + 0", "1000.5"),
+        ("sqrt(1e-998)", "1E-499"),
+    ],
+)
+def test_decimal_literals_keep_full_precision(expression: str, expected: str) -> None:
+    assert format_decimal(evaluate(expression)) == expected
+
+
 def test_division_is_rounded_to_28_digits() -> None:
     assert evaluate("1 / 3") == Decimal("0.3333333333333333333333333333")
 
@@ -58,7 +73,8 @@ def test_sqrt_irrational() -> None:
         ("9 ** 9 ** 9", "too_large"),
         ("2 ** 1001", "too_large"),
         ("(10 ** 1000) ** 1000", "too_large"),
-        ("1e999", "too_large"),
+        ("1e1000000", "too_large"),
+        ("1e999999 * 10", "too_large"),
         ("__import__('os')", "forbidden_element"),
         ("x + 1", "forbidden_element"),
         ("2 % 3", "forbidden_element"),
