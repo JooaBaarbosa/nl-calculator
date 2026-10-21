@@ -1,10 +1,12 @@
 from collections.abc import Iterator
+from pathlib import Path
 
 import pytest
 from fakes import FakeSolver, sample_result
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from nl_calculator.api import app, get_solver
+from nl_calculator.api import app, get_solver, mount_static
 from nl_calculator.solver import SolverError
 
 
@@ -66,3 +68,27 @@ def test_missing_api_key_returns_503() -> None:
     response = TestClient(app).post("/calculate", json={"question": "q"})
     assert response.status_code == 503
     assert response.json()["error"]["code"] == "not_configured"
+
+
+def test_mount_static_serves_index(tmp_path: Path) -> None:
+    (tmp_path / "index.html").write_text('<div id="root"></div>', encoding="utf-8")
+    fresh = FastAPI()
+    mount_static(fresh, tmp_path)
+    response = TestClient(fresh).get("/")
+    assert response.status_code == 200
+    assert '<div id="root">' in response.text
+
+
+def test_mount_static_without_build_explains(tmp_path: Path) -> None:
+    fresh = FastAPI()
+    mount_static(fresh, tmp_path / "missing")
+    response = TestClient(fresh).get("/")
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/html")
+    assert "npm run build" in response.text
+    assert "docker compose up --build" in response.text
+
+
+def test_api_routes_survive_static_mount(client: TestClient) -> None:
+    assert client.get("/health").json() == {"status": "ok"}
+    assert client.get("/").status_code == 200

@@ -20,6 +20,9 @@ calc = "nl_calculator.cli:run"
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.hatch.build]
+artifacts = ["src/nl_calculator/static/**"]
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/nl_calculator"]
 

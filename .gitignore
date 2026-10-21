@@ -8,3 +8,4 @@ __pycache__/
 htmlcov/
 dist/
 .env
+src/nl_calculator/static/
