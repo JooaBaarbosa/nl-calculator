@@ -143,6 +143,14 @@ brasileiro, porcentagens, raízes, uma pergunta que não é cálculo e uma divis
 uv run python evals/run.py   # usa a API de verdade (custa centavos)
 ```
 
+Última execução (2026-10-22, `claude-opus-5-5`, esforço `low`):
+
+```
+Acertos: 15/15 (100%)
+Tokens: 22813 de entrada, 1345 de saída
+Custo estimado: US$ 0.1182
+```
+
 ## Licença
 
 MIT
