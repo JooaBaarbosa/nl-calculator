@@ -61,6 +61,17 @@ it("ignores submit while loading", async () => {
   expect(fetchMock).toHaveBeenCalledTimes(1);
 });
 
+it("disables examples while a question is in flight", async () => {
+  fetchMock.mockReturnValue(new Promise(() => {}));
+  render(<App />);
+  await ask("1+1");
+  const example = screen.getByRole("button", { name: "2 elevado a 10" });
+  expect(example).toBeDisabled();
+  await userEvent.click(example);
+  expect(screen.getByLabelText("Pergunta")).toHaveValue("1+1");
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+});
+
 it("submits an example on click", async () => {
   fetchMock.mockResolvedValue(answerFor("raiz"));
   render(<App />);

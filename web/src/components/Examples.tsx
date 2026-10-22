@@ -6,15 +6,16 @@ export const EXAMPLES: readonly string[] = [
 ];
 
 interface Props {
+  disabled?: boolean;
   onPick(question: string): void;
 }
 
-export function Examples({ onPick }: Props) {
+export function Examples({ disabled = false, onPick }: Props) {
   return (
     <div className="examples">
       <span>Exemplos:</span>
       {EXAMPLES.map((example) => (
-        <button key={example} type="button" onClick={() => onPick(example)}>
+        <button key={example} type="button" disabled={disabled} onClick={() => onPick(example)}>
           {example}
         </button>
       ))}

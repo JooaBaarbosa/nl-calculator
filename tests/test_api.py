@@ -70,13 +70,35 @@ def test_missing_api_key_returns_503() -> None:
     assert response.json()["error"]["code"] == "not_configured"
 
 
-def test_mount_static_serves_index(tmp_path: Path) -> None:
+def test_mount_static_serves_index_without_shadowing_routes(tmp_path: Path) -> None:
     (tmp_path / "index.html").write_text('<div id="root"></div>', encoding="utf-8")
     fresh = FastAPI()
+
+    @fresh.get("/health")
+    def health() -> dict[str, str]:
+        return {"status": "ok"}
+
+    @fresh.post("/calculate")
+    def calculate() -> dict[str, str]:
+        return {"result": "80"}
+
     mount_static(fresh, tmp_path)
-    response = TestClient(fresh).get("/")
-    assert response.status_code == 200
-    assert '<div id="root">' in response.text
+    client = TestClient(fresh)
+    page = client.get("/")
+    assert page.status_code == 200
+    assert '<div id="root">' in page.text
+    assert client.get("/health").json() == {"status": "ok"}
+    assert client.post("/calculate").json() == {"result": "80"}
+    assert client.get("/openapi.json").status_code == 200
+
+
+def test_static_entry_is_registered_after_every_api_route() -> None:
+    # Uma rota registrada depois da página em "/" ficaria escondida por ela.
+    paths = [getattr(route, "path", "") for route in app.routes]
+    last = app.routes[-1]
+    assert getattr(last, "name", "") in {"static", "not_built"}
+    for api_path in ("/calculate", "/health", "/docs", "/openapi.json"):
+        assert paths.index(api_path) < len(paths) - 1
 
 
 def test_mount_static_without_build_explains(tmp_path: Path) -> None:

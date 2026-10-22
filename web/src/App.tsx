@@ -60,7 +60,7 @@ export default function App() {
         onChange={setQuestion}
         onSubmit={() => void submit(question)}
       />
-      <Examples onPick={pickExample} />
+      <Examples disabled={loading} onPick={pickExample} />
       <div aria-live="polite">{current && <ResultCard result={current} />}</div>
       {error && (
         <p className="error" role="alert">
