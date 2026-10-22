@@ -1,0 +1,14 @@
+.env
+.git
+.venv
+web/node_modules
+web/coverage
+src/nl_calculator/static
+.pytest_cache
+.mypy_cache
+.ruff_cache
+**/__pycache__
+.coverage
+dist
+docs
+.superpowers

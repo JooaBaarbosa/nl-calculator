@@ -1,10 +1,12 @@
 """API HTTP. Rode com: uv run uvicorn nl_calculator.api:app"""
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, StringConstraints
 
 from nl_calculator import __version__
@@ -55,3 +57,27 @@ def calculate(
     body: CalculateRequest, solver: Annotated[Solver, Depends(get_solver)]
 ) -> SolveResult:
     return solver.solve(body.question)
+
+
+STATIC_DIR = Path(__file__).parent / "static"
+
+_NOT_BUILT_PAGE = """<!doctype html>
+<html lang="pt-BR"><meta charset="utf-8"><title>nl-calculator</title>
+<p>Interface não compilada: rode <code>npm run build</code> em <code>web/</code>,
+ou use <code>docker compose up --build</code>.</p>
+<p>A API continua disponível em <a href="/docs">/docs</a>.</p>
+</html>"""
+
+
+def mount_static(app: FastAPI, directory: Path) -> None:
+    """Serve a página compilada em /. Deve ser chamada depois de todas as rotas da API."""
+    if (directory / "index.html").is_file():
+        app.mount("/", StaticFiles(directory=directory, html=True), name="static")
+        return
+
+    @app.get("/", include_in_schema=False)
+    def not_built() -> HTMLResponse:
+        return HTMLResponse(_NOT_BUILT_PAGE)
+
+
+mount_static(app, STATIC_DIR)

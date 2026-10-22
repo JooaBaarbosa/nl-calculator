@@ -4,6 +4,10 @@
 
 **Calculadora em linguagem natural: o Claude interpreta, código determinístico calcula.**
 
+![Página do nl-calculator](docs/screenshot.png)
+
+Também funciona no terminal:
+
 ```
 $ calc "quanto é 15% de 3.200 dividido em 6 parcelas?"
 15% de 3.200 é 480; dividido em 6 parcelas, dá 80 por parcela.
@@ -16,10 +20,11 @@ Passos:
 ## Como funciona
 
 ```
-pergunta ──► CLI / API ──► solver ◄──► Claude (ferramenta: calculate)
-                              │
-                              ▼
-                         evaluator ──► Decimal exato
+navegador ──► página (React) ──┐
+                               ├──► API ──► solver ◄──► Claude (ferramenta: calculate)
+terminal ──► CLI ──────────────┘               │
+                                               ▼
+                                          evaluator ──► Decimal exato
 ```
 
 1. O **solver** envia a pergunta ao Claude com uma única ferramenta, `calculate(expression)`.
@@ -45,29 +50,56 @@ A expressão gerada pelo modelo é tratada como **entrada não confiável**:
 
 ## Rodando
 
-Requisitos: [uv](https://docs.astral.sh/uv/) e uma chave da API da Anthropic.
+Você precisa de uma chave da API da Anthropic. Clone e configure:
 
 ```bash
 git clone https://github.com/JooaBaarbosa/nl-calculator.git
 cd nl-calculator
-uv sync
 cp .env.example .env   # preencha ANTHROPIC_API_KEY
 ```
 
-**CLI**
+### Com Docker (recomendado)
 
 ```bash
+docker compose up --build
+```
+
+Abra `http://localhost:8000`. A página e a API sobem juntas, num container só.
+A porta só aceita conexões da sua máquina, e a chave fica no `.env` (nunca entra na imagem).
+
+### Sem Docker
+
+Requisitos: [uv](https://docs.astral.sh/uv/) e Node 24.
+
+```bash
+cd web && npm ci && npm run build && cd ..   # compila a página para src/nl_calculator/static
+uv sync
+uv run uvicorn nl_calculator.api:app
+```
+
+Abra `http://127.0.0.1:8000`.
+
+### Terminal (CLI)
+
+```bash
+uv sync
 uv run calc "raiz quadrada de 144 mais 10% de 50"
 uv run calc "2 elevado a 10" --json
 ```
 
-**API**
+### Desenvolvimento
 
 ```bash
-uv run uvicorn nl_calculator.api:app
-curl -X POST http://127.0.0.1:8000/calculate \
-  -H "Content-Type: application/json" \
-  -d '{"question": "quanto é 15% de 3200?"}'
+uv run uvicorn nl_calculator.api:app --reload   # terminal 1: API em :8000
+cd web && npm run dev                           # terminal 2: página em :5173, com recarga
+```
+
+O Vite repassa `/calculate` e `/health` para a API.
+
+### API
+
+```bash
+curl -X POST http://127.0.0.1:8000/calculate   -H "Content-Type: application/json"   -d '{"question": "quanto é 15% de 3200?"}'
 ```
 
 Documentação interativa em `http://127.0.0.1:8000/docs`.
@@ -90,12 +122,17 @@ Documentação interativa em `http://127.0.0.1:8000/docs`.
 | Cliente da Anthropic injetado no solver | Todos os testes rodam sem rede e sem chave |
 | `fallbacks: "default"` | Se o modelo recusar, a API tenta outro modelo automaticamente |
 | Modelo e esforço configuráveis | `NLCALC_MODEL` e `NLCALC_EFFORT` sem mudar código |
+| Uma imagem multi-stage | Node só compila a página; a imagem final tem só Python, sem root |
+| Página servida pela própria API | Mesma origem: sem CORS, sem proxy, um processo só |
+| Porta só em `127.0.0.1` | Ninguém na rede local gasta os seus créditos da Anthropic |
 
 ## Qualidade
 
 - `pytest` com cobertura mínima de 90% (o avaliador tem 100%)
 - `mypy --strict` e `ruff`
-- CI no GitHub Actions a cada push e pull request
+- Front-end: Vitest + React Testing Library (cobertura mínima de 90%), `tsc` em modo estrito e ESLint
+- CI no GitHub Actions a cada push e pull request, com três jobs: Python, web e Docker
+  (o job Docker sobe a imagem e confere a página e a API)
 
 ## Avaliação com o modelo real
 
@@ -104,6 +141,14 @@ brasileiro, porcentagens, raízes, uma pergunta que não é cálculo e uma divis
 
 ```bash
 uv run python evals/run.py   # usa a API de verdade (custa centavos)
+```
+
+Última execução (2026-10-22, `claude-opus-5-5`, esforço `low`):
+
+```
+Acertos: 15/15 (100%)
+Tokens: 22813 de entrada, 1345 de saída
+Custo estimado: US$ 0.1182
 ```
 
 ## Licença

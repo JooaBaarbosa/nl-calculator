@@ -1,0 +1,9 @@
+services:
+  app:
+    build: .
+    ports:
+      # Só a sua máquina acessa: quem acessasse a página pela rede gastaria os seus créditos.
+      - "127.0.0.1:8000:8000"
+    env_file:
+      - path: .env
+        required: false

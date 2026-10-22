@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  check:
+  python:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -16,3 +16,45 @@ jobs:
       - run: uv run ruff format --check .
       - run: uv run mypy src
       - run: uv run pytest
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: web/.nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test -- --coverage
+      - run: npm run build
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: docker build -t nl-calculator .
+      - run: docker run -d -p 8000:8000 --name app nl-calculator
+      - name: Wait for /health
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8000/health && exit 0
+            sleep 1
+          done
+          docker logs app
+          exit 1
+      - name: Page is served
+        run: curl -s http://127.0.0.1:8000/ | grep -q 'id="root"'
+      - name: Without a key, /calculate answers 503
+        run: |
+          status=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://127.0.0.1:8000/calculate \
+            -H "Content-Type: application/json" -d '{"question":"1+1"}')
+          test "$status" = "503"
+      - if: always()
+        run: docker rm -f app
