@@ -186,3 +186,11 @@ def test_build_solver_requires_key() -> None:
 def test_build_solver_with_key(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
     assert isinstance(build_solver(Settings()), Solver)
+
+
+def test_system_prompt_asks_for_plain_text() -> None:
+    # A página e o terminal mostram a resposta como texto: Markdown apareceria cru (**80**).
+    fake = FakeCreate(response(text("ok")))
+    make_solver(fake).solve("q")
+    assert "Markdown" in fake.calls[0]["system"]
+    assert "texto puro" in fake.calls[0]["system"]

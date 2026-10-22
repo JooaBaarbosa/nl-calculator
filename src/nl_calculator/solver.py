@@ -26,6 +26,8 @@ expressão com ponto decimal e sem separador de milhar (em português, 3.200,5 -
 - Se a ferramenta devolver erro, corrija a expressão e tente de novo.
 - Depois de calcular, responda no idioma da pergunta em 1 ou 2 frases, usando o resultado \
 da ferramenta.
+- Escreva a resposta em texto puro, sem Markdown: nada de negrito, itálico, listas ou blocos \
+de código. Ela é exibida como texto simples.
 - Se a pergunta não for um cálculo, diga isso em uma frase, sem chamar a ferramenta."""
 
 CALCULATE_TOOL: dict[str, Any] = {
