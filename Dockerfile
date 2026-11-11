@@ -1,5 +1,5 @@
 # Etapa 1: compila a página React.
-FROM node:24-alpine AS web
+FROM node:24.22.2-alpine3.24 AS web
 WORKDIR /app/web
 COPY web/package.json web/package-lock.json ./
 RUN npm ci
@@ -8,7 +8,8 @@ COPY web/ ./
 RUN npm run build
 
 # Etapa 2: roda a API, que também serve a página. Sem Node.
-FROM ghcr.io/astral-sh/uv:python3.14-bookworm-slim
+FROM python:3.14.10-slim-trixie
+COPY --from=ghcr.io/astral-sh/uv:0.13.7 /uv /usr/local/bin/uv
 ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
     UV_PYTHON_DOWNLOADS=never
