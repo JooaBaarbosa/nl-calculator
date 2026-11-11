@@ -50,22 +50,52 @@ A expressão gerada pelo modelo é tratada como **entrada não confiável**:
 
 ## Rodando
 
-Você precisa de uma chave da API da Anthropic. Clone e configure:
-
-```bash
-git clone https://github.com/JooaBaarbosa/nl-calculator.git
-cd nl-calculator
-cp .env.example .env   # preencha ANTHROPIC_API_KEY
-```
+Você precisa de uma chave da API da Anthropic. Sem ela a página abre, mas cada cálculo
+responde 503 (`ANTHROPIC_API_KEY não está definida`).
 
 ### Com Docker (recomendado)
 
+**0. Preparar a máquina (uma vez só).** Docker Desktop instalado e **aberto**. Confira com
+`docker info`: ele precisa mostrar a versão do servidor. Se aparecer
+`failed to connect to the docker API`, o Docker Desktop está fechado.
+
+**1. Clonar ou atualizar.**
+
 ```bash
-docker compose up --build
+git clone https://github.com/JooaBaarbosa/nl-calculator.git && cd nl-calculator
+```
+
+Se já tem o clone, rode `git status -sb`. Se aparecer `[behind N]`, atualize com `git pull --ff-only`.
+
+**2. Liberar a porta 8000.** Rode `docker ps`: se outro projeto estiver na porta 8000, pare-o com
+`docker compose down` na pasta dele. Sem isso, a subida falha com `port is already allocated`.
+
+**3. Configurar o `.env`.**
+
+```bash
+cp .env.example .env   # preencha ANTHROPIC_API_KEY
+```
+
+**4. Build e subida.**
+
+```bash
+docker compose up -d --build --wait
+```
+
+- O comando só termina quando o app está saudável. Confira com `docker compose ps`: `healthy`.
+- Erro de download durante o build é falha de rede: rode o mesmo comando de novo.
+- Se o container parar, veja o motivo com `docker compose logs app --tail 20`.
+
+**5. Conferir.**
+
+```bash
+curl -s http://localhost:8000/health   # {"status":"ok"}
 ```
 
 Abra `http://localhost:8000`. A página e a API sobem juntas, num container só.
 A porta só aceita conexões da sua máquina, e a chave fica no `.env` (nunca entra na imagem).
+
+**6. Desligar.** `docker compose down`.
 
 ### Sem Docker
 
